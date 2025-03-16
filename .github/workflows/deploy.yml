@@ -15,14 +15,19 @@ jobs:
 
       - name: Set up SSH
         run: |
-          echo "${{ secrets.AWS_SSH_KEY }}" > private_key.pem
+          echo "${{ secrets.AWS_SSH_KEY }}" | tr -d '\r' > private_key.pem
           chmod 600 private_key.pem
+
+      - name: Debug Secrets
+        run: |
+          echo "User: ${{ secrets.AWS_EC2_USER }}"
+          echo "Host: ${{ secrets.AWS_EC2_HOST }}"
 
       - name: Deploy to AWS EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.AWS_EC2_USER }}@${{ secrets.AWS_EC2_HOST }} << 'EOF'
-            cd /home/ubuntu/docker-lepp || git clone https://github.com/iamtujay/docker-lepp.git && cd docker-lepp
-            git pull origin main
+            cd /home/ubuntu/docker-lepp && git pull origin main || git clone https://github.com/iamtujay/docker-lepp.git /home/ubuntu/docker-lepp
+            cd /home/ubuntu/docker-lepp
             docker-compose down
             docker-compose up -d --build
           EOF
